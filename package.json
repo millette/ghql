@@ -3,8 +3,9 @@
   "version": "0.0.0",
   "main": "index.js",
   "bin": [
-    "bin.js",
-    "spec.js"
+    "cli.js",
+    "spec.js",
+    "n.js"
   ],
   "license": "AGPL-3.0",
   "scripts": {
@@ -18,6 +19,7 @@
   "dependencies": {
     "JSONStream": "^1.3.2",
     "dotenv": "^5.0.0",
-    "lodash.pickby": "^4.6.0"
+    "lodash.pickby": "^4.6.0",
+    "ndjson": "^1.5.0"
   }
 }
