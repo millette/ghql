@@ -19,6 +19,13 @@ const setup = () => {
   process.env = { ...process.env, ...parse(readFileSync('.env')) }
   const { name, version } = require('./package.json')
   return {
+    spec: https.request.bind(null, {
+      ...url.parse('https://api.github.com/graphql'),
+      headers: {
+        'User-Agent': name + ' ' + version,
+        Authorization: 'bearer ' + process.env.GITHUB_TOKEN
+      }
+    }),
     request: https.request.bind(null, {
       method: 'POST',
       ...url.parse('https://api.github.com/graphql'),
@@ -30,7 +37,7 @@ const setup = () => {
   }
 }
 
-const { request } = setup()
+const { request, spec } = setup()
 const resFnImp = (res, reject, str, cb, all) => res
   .pipe(JSONStream.parse(str))[all ? 'on' : 'once']('data', cb).once('error', reject)
 
@@ -102,4 +109,12 @@ const dothem = async (userFn, vars) => {
   return ret
 }
 
-module.exports = { doit, dothem }
+const specImp = () => new Promise((resolve, reject) =>
+  spec((res) => {
+    if (res.statusCode !== 200) { return reject(new Error('Bad status code: ' + res.statusCode)) }
+    res.setEncoding('utf8')
+    resolve(res)
+  }).end()
+)
+
+module.exports = { doit, dothem, spec: specImp }

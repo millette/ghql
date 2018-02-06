@@ -1,12 +1,12 @@
 'use strict'
 
 // self
-const ghql = require('.')
+const { dothem } = require('.')
 
 const gotUser = (user) => {
   console.log('user:', user)
 }
 
-ghql.dothem(gotUser)
+dothem(gotUser)
   .then(console.log)
   .catch(console.error)
