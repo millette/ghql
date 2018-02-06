@@ -2,11 +2,13 @@
 
 // self
 const { dothem } = require('.')
+// const { doit } = require('.')
 
 const gotUser = (user) => {
-  console.log('user:', user)
+  console.log(JSON.stringify(user))
 }
 
 dothem(gotUser)
-  .then(console.log)
+// doit(gotUser)
+  .then(console.error)
   .catch(console.error)

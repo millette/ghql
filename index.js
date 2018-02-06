@@ -1,7 +1,7 @@
 'use strict'
 
-const PER_PAGE = 100
-const USER = 'millette' // 'ghqc'
+const PER_PAGE = 25
+const USER = 'ghqc'
 
 // core
 const https = require('https')
@@ -67,8 +67,35 @@ const doit = (userFn, vars) => new Promise((resolve, reject) => {
               name
               login
               id
+              repositoriesContributedTo(includeUserRepositories: true, first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                edges {
+                  node {
+                    description
+                    homepageUrl
+                    licenseInfo {
+                      spdxId
+                      name
+                    }
+                    nameWithOwner
+                    owner {
+                      login
+                      id
+                    }
+                    databaseId
+                    updatedAt
+                    languages(first: 5, orderBy: {field: SIZE, direction: DESC}) {
+                      edges {
+                        size
+                        node {
+                          name
+                          color
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
-            cursor
           }
           pageInfo {
             endCursor
@@ -78,9 +105,13 @@ const doit = (userFn, vars) => new Promise((resolve, reject) => {
       }
     }`.replace(/ /g, '')
   }
+
   if (vars) { dq.variables = vars }
   return request((res) => {
-    if (res.statusCode !== 200) { return reject(new Error('Bad status code: ' + res.statusCode)) }
+    if (res.statusCode !== 200) {
+      console.error('HEADERS:', res.headers)
+      return reject(new Error('Bad status code: ' + res.statusCode))
+    }
     res.setEncoding('utf8')
     const ret = { done: 0, headers: res.headers }
     if (vars.allDone) { ret.allDone = vars.allDone }
