@@ -1,5 +1,7 @@
 'use strict'
 
+const PER_PAGE = 100
+
 // core
 const https = require('https')
 
@@ -24,21 +26,60 @@ const setup = () => {
   }
 }
 
-const PER_PAGE = 5
-
 const { request } = setup()
-
 const resFnImp = (res, reject, str, cb, all) => res
   .pipe(JSONStream.parse(str))[all ? 'on' : 'once']('data', cb).once('error', reject)
 
-const doit = (dq, userFn) => new Promise(
-  (resolve, reject) => request((res) => {
+const doit = (userFn, vars) => new Promise((resolve, reject) => {
+  if (typeof vars === 'object' && !Object.keys(vars).length) { vars = false }
+  if (typeof vars !== 'object') { vars = false }
+  const dq = {
+    query: `query${vars ? ' ($after:String!)' : ''} {
+      rateLimit {
+        cost
+        limit
+        nodeCount
+        remaining
+        resetAt
+      }
+      user(login:"ghqc") {
+        following(first: ${PER_PAGE}${vars ? ' , after: $after' : ''}) {
+          totalCount
+          edges {
+            node {
+              email
+              isHireable
+              websiteUrl
+              updatedAt
+              location
+              databaseId
+              name
+              login
+              id
+            }
+            cursor
+          }
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
+        }
+      }
+    }`.replace(/ /g, '')
+  }
+  if (vars) { dq.variables = vars }
+  return request((res) => {
     if (res.statusCode !== 200) { return reject(new Error('Bad status code: ' + res.statusCode)) }
     res.setEncoding('utf8')
-    const ret = { headers: res.headers }
+    const ret = { done: 0, headers: res.headers }
+    if (vars.allDone) { ret.allDone = vars.allDone }
     res.once('end', () => resolve(ret))
     const resFn = resFnImp.bind(null, res, reject)
-    resFn('data.user.following.edges.*.node', userFn, true)
+    const counter = (user) => {
+      ++ret.done
+      return userFn(user)
+    }
+    resFn('data.user.following.edges.*.node', counter, true)
     resFn('data.rateLimit', (rateLimit) => { ret.rateLimit = rateLimit })
     resFn('data.user.following.totalCount', (count) => { ret.count = count })
     resFn('data.user.following.pageInfo', (pageInfo) => {
@@ -47,55 +88,14 @@ const doit = (dq, userFn) => new Promise(
   })
     .once('error', reject)
     .end(JSON.stringify(dq))
-)
+})
 
-const gotUser = (user) => {
-  console.log('user:', user)
+const dothem = async (userFn, vars) => {
+  const ret = await doit(userFn, vars)
+  ret.allDone = ret.allDone ? (ret.allDone + ret.done) : ret.done
+  if (ret.after) { return dothem(userFn, ret) }
+  if (ret.allDone !== ret.count) { console.error('Warning, incomplete!') }
+  return ret
 }
 
-// make this the doit() argument
-// const VARIABLES = { nextUp: 'Y3Vyc29yOnYyOpHOAdVehQ==' }
-const VARIABLES = false
-
-// move into doit() implementation
-const dataQuery = {
-  query: `query${VARIABLES ? ' ($nextUp:String!)' : ''} {
-    rateLimit {
-      cost
-      limit
-      nodeCount
-      remaining
-      resetAt
-    }
-    user(login:"ghqc") {
-      following(first: ${PER_PAGE}${VARIABLES ? ' , after: $nextUp' : ''}) {
-        totalCount
-        edges {
-          node {
-            email
-            isHireable
-            websiteUrl
-            updatedAt
-            location
-            databaseId
-            name
-            login
-            id
-          }
-          cursor
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
-        }
-      }
-    }
-  }
-  `.replace(/ /g, ''),
-  variables: VARIABLES || {}
-}
-
-// doit(gotUser, vars) // with dataQuery in the implementation
-doit(dataQuery, gotUser)
-  .then(console.log)
-  .catch(console.error)
+module.exports = { doit, dothem }
