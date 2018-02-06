@@ -67,7 +67,8 @@ const doit = (userFn, vars) => new Promise((resolve, reject) => {
               name
               login
               id
-              repositoriesContributedTo(includeUserRepositories: true, first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+              bio
+              repositoriesContributedTo(includeUserRepositories: true, first: 30, orderBy: {field: UPDATED_AT, direction: DESC}) {
                 edges {
                   node {
                     description
