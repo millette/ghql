@@ -1,12 +1,16 @@
 'use strict'
 
 const PER_PAGE = 100
+const USER = 'millette' // 'ghqc'
 
 // core
 const https = require('https')
 
 // npm
 const JSONStream = require('JSONStream')
+const pick = require('lodash.pickby')
+
+const slim = (user) => pick(user, Boolean)
 
 const setup = () => {
   const { readFileSync } = require('fs')
@@ -42,7 +46,7 @@ const doit = (userFn, vars) => new Promise((resolve, reject) => {
         remaining
         resetAt
       }
-      user(login:"ghqc") {
+      user(login:"${USER}") {
         following(first: ${PER_PAGE}${vars ? ' , after: $after' : ''}) {
           totalCount
           edges {
@@ -77,7 +81,7 @@ const doit = (userFn, vars) => new Promise((resolve, reject) => {
     const resFn = resFnImp.bind(null, res, reject)
     const counter = (user) => {
       ++ret.done
-      return userFn(user)
+      return userFn(slim(user))
     }
     resFn('data.user.following.edges.*.node', counter, true)
     resFn('data.rateLimit', (rateLimit) => { ret.rateLimit = rateLimit })
