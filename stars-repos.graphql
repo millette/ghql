@@ -1,0 +1,64 @@
+query ($searchAfter: String, $searchFirst: Int!) {
+  rateLimit {
+    cost
+    limit
+    nodeCount
+    remaining
+    resetAt
+  }
+  search(first: $searchFirst, after: $searchAfter, type: USER, query: "location:qc location:chicoutimi location:saguenay location:sherbrooke location:gatineau location:outaouais location:québec location:quebec location:montréal location:montreal sort:joined") {
+    userCount
+    pageInfo {
+      endCursor
+      hasNextPage
+      hasPreviousPage
+      startCursor
+    }
+    edges {
+      node {
+        ... on User {
+          name
+          login
+          databaseId
+          location
+          createdAt
+          isHireable
+          websiteUrl
+          starredRepositories(last: 20, ownedByViewer: false) {
+            edges {
+              starredAt
+              node {
+                nameWithOwner
+                primaryLanguage {
+                  name
+                }
+              }
+            }
+          }
+          repositoriesContributedTo(last: 20, includeUserRepositories: true) {
+            totalCount
+            edges {
+              node {
+                forkCount
+                stargazers(last: 50) {
+                  edges {
+                    starredAt
+                    node {
+                      login
+                      location
+                      createdAt
+                    }
+                  }
+                }
+                primaryLanguage {
+                  name
+                }
+                nameWithOwner
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
